@@ -1,0 +1,76 @@
+<style>
+  /* Gallery card tweaks */
+  .card {
+    margin: 10px;
+    overflow: hidden; /* prevent image bleed/overflow */
+  }
+
+  /* Target images inside cards so they scale to the card width and never overflow */
+  .card img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain; /* show whole image without cropping */
+  }
+</style>
+
+<div class="card-gallery">
+
+  <div class="card" style="width: 18rem;">
+        <a href="{{ '/sacredness' | relative_url }}">
+          <img src="{{ '/assets/img/saka-logo.png' | relative_url }}">
+        </a>
+        <div class="card-body">
+          <p class="card-text">Sacredness</p>
+        </div>
+      </div>
+      
+
+  <div class="card" style="width: 18rem;">
+         <a href="{{ '/green' | relative_url }}">
+          <img src="{{ '/assets/img/saka-logo.png' | relative_url }}">
+        </a>
+        <div class="card-body">
+          <p class="card-text">Green</p>
+        </div>
+      </div>
+
+      <div class="card" style="width: 18rem;">
+        <a href="{{ '/ecology' | relative_url }}">
+          <img src="{{ '/assets/img/saka-logo.png' | relative_url }}">
+        </a>
+        <div class="card-body">
+          <p class="card-text">Ecology</p>
+        </div>
+      </div>
+
+  <div class="card" style="width: 18rem;">
+         <a href="{{ '/ecology' | relative_url }}">
+          <img src="{{ '/assets/img/saka-logo.png' | relative_url }}">
+        </a>
+        <div class="card-body">
+          <p class="card-text">Theme 4</p>
+        </div>
+      </div>
+      
+      <div class="card" style="width: 18rem;">
+         <a href="{{ '/ecology' | relative_url }}">
+          <img src="{{ '/assets/img/saka-logo.png' | relative_url }}">
+        </a>
+        <div class="card-body">
+          <p class="card-text">Theme 5</p>
+        </div>
+      </div>
+
+  <div class="card" style="width: 18rem;">
+         <a href="{{ '/ecology' | relative_url }}">
+          <img src="{{ '/assets/img/saka-logo.png' | relative_url }}">
+        </a>
+        <div class="card-body">
+          <p class="card-text">Theme 6</p>
+        </div>
+      </div>
+ </div>
+
+ <!-- Once we have actual topics in the metadata, will convert card-text and a to link to card page as generated from site metadata KAMW -->
