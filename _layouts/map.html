@@ -4,4 +4,10 @@ layout: default
 custom-foot: js/map-js.html
 ---
 <h2 class="visually-hidden">Map of Collection Items</h2>
-<div id="mapContainer"></div>
+<div id="mapWrapper">
+	<aside id="mapSidebar" class="map-sidebar" aria-hidden="true">
+		<button id="mapSidebarClose" class="map-sidebar-close" aria-label="Close sidebar">&times;</button>
+		<div id="mapSidebarContent" class="map-sidebar-content"></div>
+	</aside>
+	<div id="mapContainer"></div>
+</div>

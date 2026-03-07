@@ -5,6 +5,21 @@
 {% endif %}
 {%- assign items = items | where_exp: 'item','item.latitude != nil and item.longitude != nil' -%}
 {%- assign fields = site.data.config-map -%}
+{%- assign mfields = site.data.config-metadata -%}
+{%- if site.data.theme.icons -%}
+    {% assign icons = site.data.theme.icons %}
+{% else %}
+    {% assign cb_icons = site.pages | where: "name","cb-icons.svg" | first %}
+    {% assign icons = cb_icons.icons %}
+{%- endif -%}
+{%- comment -%}
+Ensure the Liquid variable `cb_items` (the full set of collection items) is available
+to the item preview include. The preview include expects `cb_items` to be assigned
+in the Liquid context so it can emit the JavaScript array. Assign the full dataset
+here and then include the preview helpers (which will render `var cb_items = [...]`).
+{%- endcomment -%}
+{%- assign cb_items = site.data[site.metadata] | where_exp: 'item','item.objectid' -%}
+{% include js/item-preview.html %}
 <!-- load leaflet dependencies -->
 <script src="{{ site.lib-assets | default: '/assets/lib' | relative_url }}/leaflet/leaflet.js"></script>
 <script src="{{ site.lib-assets | default: '/assets/lib' | relative_url }}/leaflet/Leaflet.fullscreen.min.js"></script>
@@ -15,6 +30,7 @@
 
 <script>
 (function(){
+    // item data and preview helpers are included in the layout inside a <script> tag
     /* add collection map data */
     var geodata = { "type": "FeatureCollection", "features": [ 
     {% for item in items %}
@@ -40,6 +56,25 @@
 
     /* init map */
     var map = L.map('mapContainer');
+    // expose map to window so sidebar open/close can trigger invalidateSize
+    window.map = map;
+
+    /* determine navbar height and set CSS variable so sidebar/map respect it */
+    function setSiteNavbarHeightVar() {
+        var nav = document.querySelector('.navbar');
+        var height = 56; // default
+        if (nav) {
+            var rect = nav.getBoundingClientRect();
+            height = Math.round(rect.height);
+        }
+        document.documentElement.style.setProperty('--site-navbar-height', height + 'px');
+        // also ensure map container height updates if Leaflet present
+        if (window.map && typeof window.map.invalidateSize === 'function') {
+            setTimeout(function(){ window.map.invalidateSize(); }, 250);
+        }
+    }
+    setSiteNavbarHeightVar();
+    window.addEventListener('resize', function(){ setSiteNavbarHeightVar(); });
 
     /* add map layer options */
     var Esri_WorldStreetMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
@@ -113,7 +148,40 @@
     /* get icons function */ 
     {% include helpers/get-icon.js %}
 
-    /* object popup function */
+    /* object popup -> sidebar function */
+    // openSidebar(feature, htmlContent)
+    // feature: GeoJSON feature object for the clicked marker
+    // htmlContent: optional HTML string to render inside the sidebar; if omitted, a minimal fallback is built
+    function openSidebar(feature, htmlContent) {
+        var sidebar = document.getElementById('mapSidebar');
+        var content = document.getElementById('mapSidebarContent');
+        if (!sidebar || !content) return;
+        // if htmlContent provided, use it; otherwise build minimal content
+        if (htmlContent) {
+            content.innerHTML = htmlContent;
+        } else {
+            // fallback minimal build
+            var itemHref = `{{ '/items/' | relative_url }}${ feature.properties.parent ? feature.properties.parent + ".html#" + feature.properties.id : feature.properties.id + ".html"}`;
+            var title = feature.properties.title || '';
+            content.innerHTML = `<h2 class="h4"><a class="text-dark" href="${itemHref}">${title}</a></h2>`;
+        }
+        sidebar.classList.add('visible');
+        sidebar.setAttribute('aria-hidden','false');
+        // adjust map size when sidebar opens (invalidate leaflet map if present)
+        if (window.map && typeof window.map.invalidateSize === 'function') {
+            setTimeout(function(){ window.map.invalidateSize(); }, 300);
+        }
+    }
+    function closeSidebar() {
+        var sidebar = document.getElementById('mapSidebar');
+        if (!sidebar) return;
+        sidebar.classList.remove('visible');
+        sidebar.setAttribute('aria-hidden','true');
+        if (window.map && typeof window.map.invalidateSize === 'function') {
+            setTimeout(function(){ window.map.invalidateSize(); }, 300);
+        }
+    }
+
     function objectPopups(feature, layer) {
         {% if site.data.theme.map-search == true %}/* bind feature for search */
         feature.layer = layer;{% endif %}
@@ -127,17 +195,28 @@
         } else {
             thumbImg = getIcon(feature.properties.template,feature.properties.format,"thumb")
         }
-        // set up popup content
+        // set up content for sidebar
         var popupTemplate = '<h2 class="h4"><a class="text-dark" href="' + itemHref + '">' +
-            feature.properties.title + '</a></h2><div class="text-center"><a href="' + itemHref + 
+            feature.properties.title + '</a></h2><div class="text-center"><a href="' + itemHref +
             '" >' + thumbImg + '</a></div><p>';
         {% for f in fields %}{% if f.display_name %}
         if (feature.properties[{{ f.field | escape | jsonify }}]) {
             popupTemplate += '<strong>{{ f.display_name }}:</strong> ' + feature.properties[{{ f.field | escape | jsonify }}] + '<br>'; 
         }
         {% endif %}{% endfor %}
-        popupTemplate += '</p><div class="text-center"><a class="btn btn-light" href="' + itemHref + '" >View Item</a></div>';
-        layer.bindPopup(popupTemplate);
+        popupTemplate += '</p><div class="text-center"><a class="btn btn-light" href="' + itemHref + '" >More</a></div>';
+
+        // replace popup behavior: open sidebar on click
+        layer.on('click', function(e){
+            // Prefer the richer preview renderer when available (from item-preview.js).
+            var html = (typeof buildItemPreviewHtml === 'function' && feature && feature.properties && feature.properties.id) ? buildItemPreviewHtml(feature.properties.id) : popupTemplate;
+            openSidebar(feature, html);
+        });
+        // also override openPopup so other code calling openPopup still opens the sidebar
+        layer.openPopup = function() {
+            var html = (typeof buildItemPreviewHtml === 'function' && feature && feature.properties && feature.properties.id) ? buildItemPreviewHtml(feature.properties.id) : popupTemplate;
+            openSidebar(feature, html);
+        };
     }
     function objectMarkers(feature,latlng) {
         var marker = L.marker(latlng, {alt: feature.properties.title});
@@ -198,6 +277,15 @@
             }
         });
         {% endif %}
+    }
+
+    // sidebar close button wiring
+    var closeBtn = document.getElementById('mapSidebarClose');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            closeSidebar();
+        });
     }
 
 })();

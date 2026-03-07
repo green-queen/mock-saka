@@ -123,8 +123,43 @@ $toc-a-color: #191919 !default;
 }
 
 
-/* map */
-#mapContainer { height: 750px; z-index: 98; }
+.map-sidebar {
+    /* allow overriding navbar height from site variables; default to 56px */
+    --site-navbar-height: var(--site-navbar-height, 56px);
+    position: fixed;
+    left: 0;
+    top: var(--site-navbar-height);
+    width: 360px;
+    max-width: 85%;
+    background: var(--bs-body-bg, #fff);
+    border-right: 1px solid #e6e6e6;
+    padding: 1rem;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    transform: translateX(-110%);
+    transition: transform 0.28s ease;
+    z-index: 1000;
+    overflow-y: scroll;
+    height: calc(100vh - var(--site-navbar-height));
+}
+.map-sidebar.visible {
+    transform: translateX(0);
+    overflow-y: scroll;
+}
+.map-sidebar-close {
+    position: absolute;
+    right: 0.5rem;
+    top: 0.25rem;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+/* map: use viewport height minus navbar so sidebar doesn't overlap navbar */
+#mapContainer { height: calc(100vh - var(--site-navbar-height)); z-index: 98; }
+/* adjust map container when sidebar visible on wide screens (desktop: shrink map) */
+@media (min-width: 768px) {
+    #mapContainer { margin-left: 0; transition: margin-left 0.28s ease; }
+}
 .map-thumb {
     height: 100px;
     max-width: 100%;

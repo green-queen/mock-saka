@@ -1,0 +1,132 @@
+<script>
+var cb_items = [ 
+        {%- for item in cb_items -%}
+        { "objectid": {{ item.objectid | jsonify }}, {% if item.parentid %}"parentid": {{ item.parentid | jsonify }}, {% endif %}{% if item.title %}{% unless mfields contains 'title' %}"title": {{ item.title | jsonify }}, {% endunless %}{% endif %}{% for f in mfields %}{% if item[f.field] %}{{ f.field | jsonify }}: {{ item[f.field] | jsonify }}, {% endif %}{% endfor %}{% if item.youtubeid %} "youtubeid": {{ item.youtubeid | jsonify }}, {% endif %}{% if item.vimeoid %} "vimeoid": {{ item.vimeoid | jsonify }}, {% endif %}"format": {{ item.format | jsonify }},{% if item.image_small %} "image_small": {{ item.image_small | relative_url | jsonify }}, {% endif %}{% if item.image_thumb %} "image_thumb": {{ item.image_thumb | relative_url | jsonify }}, {% endif %} "filename": {% if item.object_location %}{% if item.object_location contains '/' %}{{ item.object_location | relative_url | jsonify }}{% else %}{{ ("/objects/" | append: item.object_location) | relative_url | jsonify }}{% endif %}{% else %}""{% endif %} }{% unless forloop.last %}, {% endunless %}
+        {% endfor %}
+    ];
+function findFileLink(record) {
+    if (!record || !record.filename) return "";
+    // Check if filename already has the full path (contains / or http)
+    if (record.filename.includes('/') || record.filename.startsWith('http')) {
+        return record.filename;
+    }
+    // Otherwise prepend the objects directory
+    return "{{ '/objects/' | relative_url }}" + record.filename;
+}
+
+var ICONS_BASE = "{{ '/assets/lib/icons/' | relative_url }}";
+var ICONS = {
+  default: "{{ icons.icon-default | default: 'icon-default' }}",
+  record: "{{ icons.icon-record | default: 'icon-record' }}",
+  audio: "{{ icons.icon-audio | default: 'icon-audio' }}",
+  video: "{{ icons.icon-video | default: 'icon-video' }}",
+  pdf: "{{ icons.icon-pdf | default: 'icon-pdf' }}"
+};
+
+
+function buildItemDisplay(item, mainRecord) {
+  var fileLink = findFileLink(item);
+  var lowerFormat = (item.format || '').toString().toLowerCase();
+  var imgCandidate = fileLink || item.image_thumb || item.image_small || item.filename || '';
+  var looksLikeImage = /\.(jpe?g|png|gif|webp|svg)$/i.test(imgCandidate) || lowerFormat.indexOf('image') !== -1 || item.image_thumb || item.image_small;
+  var result = { itemDisplay: '', itemDownload: '' };
+
+  if (looksLikeImage) {
+    var imgSrc = fileLink || item.image_thumb || item.image_small || item.filename || '';
+    if (imgSrc) {
+      result.itemDisplay = '<a class="spotlight gallery-img" data-download="true" href="' + (fileLink || imgSrc) + '">';
+      result.itemDisplay += '<img class="img-fluid" src="' + imgSrc + '" alt="' + (item.title || 'Image preview') + '">';
+      result.itemDisplay += '</a>';
+      if (fileLink && fileLink !== imgSrc) {
+        result.itemDisplay += '<div class="text-center small text-dark mt-1">Click image to open full resolution</div>';
+      }
+      result.itemDownload = fileLink ? '<a href="' + fileLink + '" target="_blank" rel="noopener" class="btn btn-outline-danger">Download</a>' : '';
+    } else {
+      result.itemDisplay = '<div class="text-center py-4"><img class="w-50" src="' + ICONS_BASE + ICONS.default + '.svg" alt="No preview available"></div>';
+      result.itemDownload = fileLink ? '<a href="' + fileLink + '" target="_blank" rel="noopener" class="btn btn-outline-danger">Download</a>' : '';
+    }
+  } else if (lowerFormat.indexOf('pdf') !== -1) {
+    if (fileLink) {
+      result.itemDisplay = '<div class="ratio ratio-4x3"><iframe title="PDF" src="' + fileLink + '" style="width:100%;height:600px;border:0;"></iframe><embed src="' + fileLink + '" type="application/pdf" width="100%" height="600" /></div>';
+      result.itemDownload = '<a href="' + fileLink + '" target="_blank" rel="noopener" class="btn btn-outline-danger">Download PDF</a>';
+    } else {
+      result.itemDisplay = '<p>PDF not available</p>';
+    }
+  } else if (lowerFormat.indexOf('audio') !== -1) {
+    result.itemDisplay = fileLink ? '<audio controls class="w-100"><source src="' + fileLink + '">Your browser does not support audio.</audio>' : '<p>Audio not available</p>';
+    result.itemDownload = fileLink ? '<a href="' + fileLink + '" target="_blank" rel="noopener" class="btn btn-outline-danger">Download</a>' : '';
+  } else if (item.youtubeid) {
+    result.itemDisplay = '<div class="ratio ratio-16x9"><iframe title="video embed" src="https://www.youtube-nocookie.com/embed/' + item.youtubeid + '?rel=0" allowfullscreen></iframe></div>';
+    result.itemDownload = '<a href="https://youtu.be/' + item.youtubeid + '" target="_blank" rel="noopener" class="btn btn-outline-danger">View on YouTube</a>';
+  } else {
+    result.itemDisplay = '<img class="w-50" src="' + ICONS_BASE + ICONS.default + '.svg" alt="No preview found">';
+  }
+
+  return result;
+}
+
+
+function generateMetadataHtml(item) {
+  var fields_html = '<dl>';
+  {% for f in mfields %}{% if f.browse_link == "true" %}
+  if (item[{{ f.field | jsonify }}]) {
+      var topics = item[{{ f.field | jsonify }}].split(';');
+      var browseLinks = "";
+      for (var i = 0, len = topics.length; i < len; i++) {
+          if (topics[i] != "") {
+              browseLinks += '<a class="btn btn-link" href="{{ '/browse.html' | relative_url }}#' + encodeURIComponent(topics[i].trim()) + '">' + topics[i].trim() + '</a> ';
+          }
+      }
+      fields_html += '<dt class="field">{{ f.display_name }}:</dt> <dd class="field-value">' + browseLinks + '</dd>';
+  }
+  {%- else -%}
+  if (item[{{ f.field | jsonify }}]) { fields_html += '<dt class="field">{{ f.display_name }}:</dt> <dd class="field-value">{% if f.external_link == "true" %}<a href="' + item[{{ f.field | jsonify }}] + '" target="_blank" rel="noopener">' + item[{{ f.field | jsonify }}] + '</a>{% else %}' + item[{{ f.field | jsonify }}] + '{% endif %}</dd>'; }
+  {% endif %}{% endfor %}
+  fields_html += '</dl>';
+  return fields_html;
+}
+
+function buildItemPreviewHtml(objectid) {
+  var record = cb_items.find(function(i){ return String(i.objectid) === String(objectid); });
+  if (!record) return '<p>Item not found</p>';
+  var child_records = cb_items.filter(function(i){ return String(i.parentid) === String(record.objectid); });
+
+  var itemImageHTML = '';
+  var itemLinkHTML = '';
+
+  if (child_records.length > 0) {
+    var compound_html = '';
+    var compoundDownload = '<div class="btn-group" role="group">';
+    for (var i = 0; i < child_records.length; i++) {
+      var res = buildItemDisplay(child_records[i], record);
+      compound_html += '<div class="mb-2">' + res.itemDisplay + '</div>';
+      compoundDownload += res.itemDownload ? res.itemDownload : '';
+    }
+    compoundDownload += '</div>';
+    itemImageHTML = compound_html;
+    itemLinkHTML = compoundDownload;
+  } else {
+    var resMain = buildItemDisplay(record, record);
+    itemImageHTML = resMain.itemDisplay;
+    itemLinkHTML = resMain.itemDownload;
+  }
+
+  var itemFormat = record.format ? record.format.replace("_", " ").toUpperCase() : '';
+  if (child_records.length > 0) itemFormat += ' (' + child_records.length + ' Items)';
+
+  // metadata
+  var metadataHtml = generateMetadataHtml(record);
+
+  // build final HTML (match your offcanvas layout)
+  var html = '';
+  html += '<ul class=\"breadcrumb h6\"><li class=\"breadcrumb-item\"><a class=\"text-dark\" href=\"{{ \"/\" | relative_url }}\">{{ site.title }}</a></li><li class=\"breadcrumb-item\"><a class=\"text-dark\" href=\"{{ \"/browse.html\" | relative_url }}\">Browse</a></li><li class=\"breadcrumb-item active text-dark\">' + (record.title || '') + '</li></ul>';
+  html += '<div class=\"my-0 h5 small\">' + itemFormat + '</div>';
+  html += '<h2 class=\"mb-3\">' + (record.title || '') + '</h2>';
+  html += '<div class=\"card mb-4 text-center\">' + itemImageHTML + '<div class=\"card-body\">' + itemLinkHTML + '</div></div>';
+  html += '<div id=\"item-metadata-inner\">' + metadataHtml + '</div>';
+  html += '<div class=\"text-center\"><a class=\"btn btn-secondary\" href=\"{{ \"/browse.html\" | relative_url }}\">&laquo; Back to Collection Browse</a></div>';
+
+  return html;
+}
+
+</script>
