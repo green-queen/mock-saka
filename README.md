@@ -49,6 +49,8 @@ I encourage you to experiment with code, but just in case you're anxious about b
 * Add includes or features that you'd like to reuse across the site.
 * Anything else you can think of that's not covered by the CB documentation.
 
+## TL;DR
+
 | Element      | File to Edit |
 | ----------- | ----------- |
 | Aesthetics      | _data/template.yml       |
