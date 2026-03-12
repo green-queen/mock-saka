@@ -77,10 +77,10 @@ function generateMetadataHtml(item) {
               browseLinks += '<a class="btn btn-link" href="{{ '/browse.html' | relative_url }}#' + encodeURIComponent(topics[i].trim()) + '">' + topics[i].trim() + '</a> ';
           }
       }
-      fields_html += '<dt class="field">{{ f.display_name }}:</dt> <dd class="field-value">' + browseLinks + '</dd>';
+      fields_html += '<dt class="field">{{ f.display_name }}</dt> <dd class="field-value">' + browseLinks + '</dd>';
   }
   {%- else -%}
-  if (item[{{ f.field | jsonify }}]) { fields_html += '<dt class="field">{{ f.display_name }}:</dt> <dd class="field-value">{% if f.external_link == "true" %}<a href="' + item[{{ f.field | jsonify }}] + '" target="_blank" rel="noopener">' + item[{{ f.field | jsonify }}] + '</a>{% else %}' + item[{{ f.field | jsonify }}] + '{% endif %}</dd>'; }
+  if (item[{{ f.field | jsonify }}]) { fields_html += '<dt class="field">{{ f.display_name }}</dt> <dd class="field-value">{% if f.external_link == "true" %}<a href="' + item[{{ f.field | jsonify }}] + '" target="_blank" rel="noopener">' + item[{{ f.field | jsonify }}] + '</a>{% else %}' + item[{{ f.field | jsonify }}] + '{% endif %}</dd>'; }
   {% endif %}{% endfor %}
   fields_html += '</dl>';
   return fields_html;
@@ -100,7 +100,7 @@ function buildItemPreviewHtml(objectid) {
     for (var i = 0; i < child_records.length; i++) {
       var res = buildItemDisplay(child_records[i], record);
       compound_html += '<div class="mb-2">' + res.itemDisplay + '</div>';
-      compoundDownload += res.itemDownload ? res.itemDownload : '';
+      compoundDownload += res.itemDownload ? res.itemDownload '';
     }
     compoundDownload += '</div>';
     itemImageHTML = compound_html;

@@ -60,3 +60,5 @@ I encourage you to experiment with code, but just in case you're anxious about b
 | Search settings | _data/config-search.csv AND config.yml |
 | Navbar | _data/config-nav.csv |
 | Map settings | config-map.csv |
+| Metadata on item page | _data/config-metadata.csv |
+| Metadata on browse page cards | _data/config-browse.csv |
