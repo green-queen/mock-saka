@@ -5,7 +5,7 @@
     Styled as a Bootstrap btn-group.
 
 {%- endcomment -%}
-<div class="btn-group my-3" role="group" aria-label="Item options">
+<div class="btn-group my-3" role="group" aria-label="Item options" style="width:fit-content;">
     {% if page.object_transcript %}<button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTranscript{{ page.objectid }}" aria-expanded="false" aria-controls="collapseTranscript{{ page.objectid }}">View Transcript</button>{% endif %}
     {% if page.date %}{%- capture year -%}{% if page.date contains "-" %}{{ page.date | split: "-" | first }}{% elsif page.date contains "/" %}{{ page.date | split: "/" | last }}{% else %}{{ page.date }}{% endif %}{%- endcapture -%}
 

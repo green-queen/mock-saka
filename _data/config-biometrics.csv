@@ -1,0 +1,5 @@
+field,display_name,browse_link,external_link,dc_map,schema_map
+date,Date collected,,,DCTERMS.date,dateCreated
+site_name,Location,,,,contentLocation
+latitude,Latitude,,,,
+longitude,Longitude,,,,

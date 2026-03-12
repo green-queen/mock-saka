@@ -1,6 +1,7 @@
   <div class="card">
         <div class="card-body">
           <p class="card-text">
+            <h4 style="text-align: center;">Biometric Data</h4>
            {% include item/biometric-data.html %}
           </p>
         </div>
@@ -8,8 +9,8 @@
       <div class="card">
         <div class="card-body">
           <p class="card-text" style="text-align: center;">
-            <h3 style="text-align: center;">Tags</h3>
-            {% include feature/cloud.html fields="subject" min=2 %}
+            <h4 style="text-align: center;">Tags</h4>
+            <a class="me-3" href="{{ page.subject | strip | url_param_escape | prepend: '/browse.html#' | relative_url }}">{{ page.subject | join: ", " }}</a>
           </p>
         </div>
       </div>
