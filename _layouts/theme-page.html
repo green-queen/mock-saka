@@ -1,0 +1,13 @@
+---
+title: Sacred Space in Bali
+layout: page
+permalink: /sacred-space-bali
+---
+{% assign heading-title = page.title %}
+{% include feature/gallery.html image-heading=page.banner-image heading=page.title filter="item.subject contains 'bismillah yo'" %}
+
+{% include feature/cloud.html fields="subject" min=2 %}
+
+<div>
+{{ content }}
+</div>

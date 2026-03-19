@@ -6,11 +6,20 @@
           </p>
         </div>
       </div>
-      <div class="card">
+<div class="card">
         <div class="card-body">
           <p class="card-text" style="text-align: center;">
             <h4 style="text-align: center;">Tags</h4>
-            <a class="me-3" href="{{ page.subject | strip | url_param_escape | prepend: '/browse.html#' | relative_url }}">{{ page.subject | join: ", " }}</a>
+              <div id="tags-metadata">
+                  <dl>
+                      <dd class="subject">
+                          {% assign topics = page.subject | split: ";" %}
+                          {% for t in topics %}
+                          <a class="me-3" href="{{ t | strip | url_param_escape | prepend: ':' | prepend: f.field | prepend: '/browse.html#' | relative_url }}">{{ t | strip }}</a>
+                        {% endfor %}
+                      </dd>
+                  </dl>
+              </div>
           </p>
         </div>
       </div>
