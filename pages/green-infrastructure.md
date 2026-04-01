@@ -1,7 +1,7 @@
 ---
 title: Green Infrastructure
 layout: theme-page
-permalink: /green-infrastructure
+permalink: /Green Infrastructure
 banner-image: "mock_001b"
 stopwords: "ritual;river;buddhism;islam;hinduism;shrine;dance;community;sacredness"
 ---

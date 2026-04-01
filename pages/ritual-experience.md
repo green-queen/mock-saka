@@ -1,7 +1,7 @@
 ---
 title: Ritual Experience & Ecology
 layout: theme-page
-permalink: /ritual-experience-ecology
+permalink: /Ritual Experience and Ecology
 banner-image: "mock_005b"
 stopwords: "greenness;sacredness;hinduism;buddhism;islam;dance"
 ---

@@ -7,7 +7,9 @@
 {% unless site.data.theme.faceted-search or site.data.theme.advanced-search %}
 {% include js/browse-simple-js.html %}
 {% else %}
+
 <script>
+
 /**
  * BROWSE PAGE JAVASCRIPT - Less Janky Version
  * 
@@ -37,11 +39,138 @@ var items = [
 // Valid field names for URL-based searches
 const validFields = [{% for f in fields %}"{{ f.field }}",{% endfor %}"title","display_template"];
 
+const associatedTopicMap = {
+    {% for row in site.data.config-tags %}
+    "{{ row.tag | strip | escape }}": {{ row.associated_topics | split: ';' | jsonify }}{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+};
+const associatedTagValues = Object.keys(associatedTopicMap);
+
+function normalizeText(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function splitSearchValues(value) {
+    return String(value || '').split(';').map(item => item.trim()).filter(Boolean);
+}
+
+function getCurrentSearchTerms() {
+    const terms = [];
+
+    if (window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        let index = 0;
+
+        while (params.has(`f${index}`) && params.has(`v${index}`)) {
+            const rawValue = params.get(`v${index}`);
+            splitSearchValues(rawValue).forEach(term => {
+                if (term) terms.push(term);
+            });
+            index++;
+        }
+
+        if (terms.length) {
+            return terms;
+        }
+    }
+
+    const hash = decodeURIComponent(location.hash.substr(1)).trim();
+    if (hash && hash !== 'maincontent') {
+        if (hash.includes(':')) {
+            const [potentialField, hashQuery] = hash.split(':');
+            const value = hashQuery.trim();
+            if (value) {
+                terms.push(value);
+            }
+        } else if (hash) {
+            terms.push(hash);
+        }
+    }
+
+    const inputValue = document.querySelector('#filterTextBox')?.value.trim();
+    if (inputValue) {
+        splitSearchValues(inputValue).forEach(term => {
+            if (term) terms.push(term);
+        });
+    }
+
+    return terms;
+}
+
+function findAssociatedTopics(searchTerms) {
+    const topics = new Set();
+    const normalizedTerms = searchTerms
+        .flatMap(term => splitSearchValues(term))
+        .map(normalizeText)
+        .filter(Boolean);
+
+    normalizedTerms.forEach(term => {
+        associatedTagValues.forEach(tag => {
+            const normalizedTag = normalizeText(tag);
+            if (
+                term === normalizedTag ||
+                term.includes(normalizedTag) ||
+                normalizedTag.includes(term)
+            ) {
+                const associatedTopics = associatedTopicMap[tag] || [];
+                associatedTopics.forEach(topic => {
+                    if (topic) topics.add(topic);
+                });
+            }
+        });
+    });
+
+    return Array.from(topics);
+}
+
+function renderAssociatedTopics(topics) {
+    const containerId = 'associatedTopicsBox';
+    let container = document.getElementById(containerId);
+
+    if (!topics.length) {
+        if (container) {
+            container.innerHTML = '';
+            container.style.display = 'none';
+        }
+        return;
+    }
+
+    if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'mb-3';
+        const activeFiltersDiv = document.getElementById('activeFilters');
+        const browseFilter = document.getElementById('browseFilter');
+        const insertBefore = activeFiltersDiv?.nextSibling || browseFilter?.nextSibling;
+        if (browseFilter && browseFilter.parentNode) {
+            browseFilter.parentNode.insertBefore(container, insertBefore);
+        }
+    }
+
+    container.style.display = '';
+    container.innerHTML = `
+        <div class="card border-secondary mb-3" style="text-align: left;">
+            <div class="card-body">
+                <strong>Related topics:</strong>
+                <ul class="mb-0">
+                    ${topics.map(topic => `<li><a href="${encodeURI(topic)}">${topic}</a></li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+function updateAssociatedTopics() {
+    const searchTerms = getCurrentSearchTerms();
+    const matchingTopics = findAssociatedTopics(searchTerms);
+    renderAssociatedTopics(matchingTopics);
+}
+
 // Date field names - add your date fields here
 const dateFields = ['date', 'created', 'published', 'modified', 'issued', 'date_created', 'date_published'];
 
 // Cache DOM elements
-var loadingIcon, filterTextBox, browseItemsDiv;
+var loadingIcon, filterTextBox, browseItemsDiv, currentTag;
 
 {% include helpers/get-icon.js %}
 
@@ -385,6 +514,8 @@ function updateDisplay(filteredItems, query = "", field = "", startDate = "", en
     } else if (arguments.length <= 1) { // Only clear if not called from advancedFilterItems
         displayActiveFilters([]);
     }
+
+    updateAssociatedTopics();
 }
 
 // =============================================================================
@@ -703,10 +834,12 @@ function displayActiveFilters(searchCriteria) {
                 displayValue = `until ${criteria.endDate}`;
             }
         }
+
+    
         
         const showBoolean = searchCriteria.length > 1 && criteria.boolean !== 'AND';
         button.innerHTML = `
-            <span class="me-1">${showBoolean ? criteria.boolean + ' ' : ''}${fieldName}: "${displayValue}"</span>
+            <span id="tagButton" class="me-1">${showBoolean ? criteria.boolean + ' ' : ''}${fieldName}: "${displayValue}"</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
             </svg>
@@ -821,6 +954,8 @@ window.addEventListener('load', function() {
     loadingIcon = document.querySelector("#loadingIcon");
     filterTextBox = document.querySelector('#filterTextBox');
     browseItemsDiv = document.querySelector("#browseItems");
+
+
     
     // Initialize default sort
     {% if site.data.theme.default-sort-field %}
@@ -1039,5 +1174,9 @@ function setupEventHandlers() {
         });
     }
 }
+
+
+
+
 </script>
 {% endunless %}

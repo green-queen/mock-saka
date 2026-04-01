@@ -3,8 +3,7 @@
 layout: page
 custom-foot: js/browse-js.html
 ---
-{%- assign fields = site.data.config-browse -%}
-
+<h1 id="urlDisplay"></h1>
 <div class="row mb-2">
     <div class="col-7 col-lg-9">{{ content }}</div>
     <div class="col-5 col-lg-3 text-end text-lg-start">{% if site.data.theme.advanced-search == true %}{% include advanced-search-modal.html %}{% endif %}</div>
@@ -89,3 +88,4 @@ custom-foot: js/browse-js.html
 </div>
 
 <div class="row" id="browseItems"></div>
+<h1 id="yopp"></h1>

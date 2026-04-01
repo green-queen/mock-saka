@@ -1,7 +1,7 @@
 ---
 title: Sacred Space in Bali
 layout: theme-page
-permalink: /sacred-space-bali
+permalink: /Sacred Space in Bali
 banner-image: "mock_002b"
 stopwords: "greenness;river;ecology"
 ---
